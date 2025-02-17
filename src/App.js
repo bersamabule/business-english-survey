@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box } from '@mui/material';
 import Survey from './components/Survey';
 
@@ -12,8 +12,7 @@ function App() {
         py: 4
       }}>
         <Routes>
-          <Route path="/survey" element={<Survey />} />
-          <Route path="/" element={<Navigate to="/survey" replace />} />
+          <Route path="/" element={<Survey />} />
         </Routes>
       </Box>
     </Router>
