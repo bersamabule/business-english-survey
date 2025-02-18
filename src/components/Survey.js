@@ -20,6 +20,25 @@ import { generateSurveyPDF } from '../utils/generateSurveyPDF';
 async function sendEmailReport(clientName, surveyData) {
   console.log('Attempting to send email for:', clientName);
   try {
+    if (!process.env.REACT_APP_RESEND_API_KEY) {
+      throw new Error('Resend API key is not configured');
+    }
+
+    const emailContent = `
+      <h1>Business English Survey Report</h1>
+      <h2>Client: ${clientName}</h2>
+      <h3>Survey Results:</h3>
+      ${Object.entries(surveyData).map(([section, responses]) => `
+        <h4>${section}</h4>
+        <ul>
+          ${Object.entries(responses).map(([skill, rating]) => `
+            <li><strong>${skill}:</strong> ${rating}</li>
+          `).join('')}
+        </ul>
+      `).join('')}
+      <p>Generated on ${new Date().toLocaleString()}</p>
+    `;
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -27,23 +46,24 @@ async function sendEmailReport(clientName, surveyData) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'survey@woburnforum.com',
+        from: 'Business English Survey <survey@woburnforum.com>',
         to: 'andrew@woburnforum.com',
-        subject: `Survey Completed by ${clientName}`,
-        html: `
-          <h1>Survey Completion Report</h1>
-          <p>Client Name: ${clientName}</p>
-          <pre>${JSON.stringify(surveyData, null, 2)}</pre>
-        `
+        subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
+        html: emailContent
       })
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Email API error: ${errorData.message || 'Unknown error'}`);
+    }
 
     const data = await response.json();
     console.log('Email sent successfully:', data);
     return data;
   } catch (error) {
     console.error('Failed to send email:', error);
-    throw error;
+    throw new Error(`Email sending failed: ${error.message}`);
   }
 }
 

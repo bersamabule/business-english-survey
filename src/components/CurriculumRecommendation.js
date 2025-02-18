@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,7 +10,8 @@ import {
   TableRow,
   Button,
   Chip,
-  TableContainer
+  TableContainer,
+  CircularProgress
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
@@ -79,6 +80,9 @@ async function sendEmailReport(clientName, surveyData) {
 }
 
 const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const calculateResponseRate = () => {
     let totalModules = 0;
     let answeredModules = 0;
@@ -244,8 +248,44 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
   };
 
   const handleSubmitSurvey = async () => {
-    await handleSurveyCompletion();
+    setIsSubmitting(true);
+    try {
+      await handleSurveyCompletion();
+      setShowSuccess(true);
+      // Show success message for 2 seconds, then redirect
+      setTimeout(() => {
+        resetSurvey();
+        window.location.href = '/'; // Redirect to home page
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting survey:', error);
+      alert('There was an error submitting your survey. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (showSuccess) {
+    return (
+      <Box sx={{ 
+        textAlign: 'center', 
+        py: 4,
+        backgroundColor: '#e8f5e9',
+        borderRadius: 2,
+        margin: 2
+      }}>
+        <Typography variant="h5" sx={{ color: '#2e7d32', mb: 2 }}>
+          ✅ Survey Submitted Successfully!
+        </Typography>
+        <Typography>
+          Thank you for completing the survey. A summary has been sent to andrew@woburnforum.com
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
+          Redirecting to home page...
+        </Typography>
+      </Box>
+    );
+  }
 
   const recommendations = analyzeSurveyResponses();
 
@@ -362,9 +402,17 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
               variant="contained"
               color="success"
               onClick={handleSubmitSurvey}
+              disabled={isSubmitting}
               sx={{ fontSize: '1.1em', padding: '10px 30px' }}
             >
-              Submit Survey Results
+              {isSubmitting ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Survey Results'
+              )}
             </Button>
           </Box>
         </>
