@@ -42,34 +42,47 @@ async function sendEmailReport(clientName, surveyData) {
     `;
 
     console.log('Sending email request to Resend...');
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.REACT_APP_RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'Business English Survey <survey@woburnforum.com>',
-        to: 'andrew@woburnforum.com',
-        subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
-        html: emailContent
-      })
-    });
+    
+    // First try with credentials included
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${process.env.REACT_APP_RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'Business English Survey <survey@woburnforum.com>',
+          to: 'andrew@woburnforum.com',
+          subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
+          html: emailContent
+        })
+      });
 
-    console.log('Resend API Response Status:', response.status);
-    const responseData = await response.json();
-    console.log('Resend API Response:', responseData);
+      console.log('Resend API Response Status:', response.status);
+      const responseData = await response.json();
+      console.log('Resend API Response:', responseData);
 
-    if (!response.ok) {
-      throw new Error(`Email API error: ${responseData.message || 'Unknown error'} (Status: ${response.status})`);
+      if (!response.ok) {
+        throw new Error(`Email API error: ${responseData.message || 'Unknown error'} (Status: ${response.status})`);
+      }
+
+      return responseData;
+    } catch (fetchError) {
+      console.error('Detailed fetch error:', {
+        message: fetchError.message,
+        type: fetchError.type,
+        name: fetchError.name
+      });
+      throw fetchError;
     }
-
-    return responseData;
   } catch (error) {
     console.error('Detailed email error:', {
       message: error.message,
       stack: error.stack,
-      apiKey: process.env.REACT_APP_RESEND_API_KEY ? 'Present' : 'Missing'
+      apiKey: process.env.REACT_APP_RESEND_API_KEY ? 'Present (length: ' + process.env.REACT_APP_RESEND_API_KEY.length + ')' : 'Missing'
     });
     throw new Error(`Email sending failed: ${error.message}`);
   }
