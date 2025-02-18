@@ -243,6 +243,10 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
     setResponses({});
   };
 
+  const handleSubmitSurvey = async () => {
+    await handleSurveyCompletion();
+  };
+
   const recommendations = analyzeSurveyResponses();
 
   return (
@@ -280,14 +284,6 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
               sx={{ mb: 2 }}
             >
               Export Curriculum Plan
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSurveyCompletion}
-              sx={{ mb: 2 }}
-            >
-              Complete Survey
             </Button>
             <Button
               variant="outlined"
@@ -360,6 +356,17 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleSubmitSurvey}
+              sx={{ fontSize: '1.1em', padding: '10px 30px' }}
+            >
+              Submit Survey Results
+            </Button>
+          </Box>
         </>
       )}
     </Box>

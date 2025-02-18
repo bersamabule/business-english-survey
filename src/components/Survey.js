@@ -20,22 +20,25 @@ import { generateSurveyPDF } from '../utils/generateSurveyPDF';
 async function sendEmailReport(clientName, surveyData) {
   console.log('Attempting to send email for:', clientName);
   try {
-    const { data, error } = await supabase.functions.invoke('send-survey-email', {
-      body: {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.REACT_APP_RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'survey@woburnforum.com',
         to: 'andrew@woburnforum.com',
         subject: `Survey Completed by ${clientName}`,
-        content: {
-          clientName,
-          surveyData: JSON.stringify(surveyData, null, 2)
-        }
-      }
+        html: `
+          <h1>Survey Completion Report</h1>
+          <p>Client Name: ${clientName}</p>
+          <pre>${JSON.stringify(surveyData, null, 2)}</pre>
+        `
+      })
     });
 
-    if (error) {
-      console.error('Error sending email:', error);
-      throw error;
-    }
-
+    const data = await response.json();
     console.log('Email sent successfully:', data);
     return data;
   } catch (error) {
