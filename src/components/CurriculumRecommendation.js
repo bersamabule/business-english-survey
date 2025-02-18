@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import { surveyData } from '../data/surveyData';
 import DownloadIcon from '@mui/icons-material/Download';
+import { supabase } from '../utils/supabaseClient';
 
 const TOTAL_HOURS = 40;
 
@@ -64,7 +65,20 @@ const calculateModuleScore = (module, responses) => {
   };
 };
 
-const CurriculumRecommendation = ({ responses, clientName }) => {
+async function sendEmailReport(clientName, surveyData) {
+  console.log('Sending email report for:', clientName);
+  const { error } = await supabase.functions.invoke('send-email', {
+    body: {
+      to: 'andrew@woburnforum.com',
+      subject: `Survey Completed by ${clientName}`,
+      text: `The survey has been completed. Here are the details: ${JSON.stringify(surveyData)}`
+    }
+  });
+  if (error) console.error('Error sending email:', error);
+  else console.log('Email sent successfully');
+}
+
+const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
   const calculateResponseRate = () => {
     let totalModules = 0;
     let answeredModules = 0;
@@ -220,6 +234,15 @@ const CurriculumRecommendation = ({ responses, clientName }) => {
     XLSX.writeFile(wb, fileName);
   };
 
+  const handleSurveyCompletion = async () => {
+    console.log('Survey completion triggered');
+    await sendEmailReport(clientName, responses);
+  };
+
+  const resetSurvey = () => {
+    setResponses({});
+  };
+
   const recommendations = analyzeSurveyResponses();
 
   return (
@@ -257,6 +280,22 @@ const CurriculumRecommendation = ({ responses, clientName }) => {
               sx={{ mb: 2 }}
             >
               Export Curriculum Plan
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSurveyCompletion}
+              sx={{ mb: 2 }}
+            >
+              Complete Survey
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={resetSurvey}
+              sx={{ mb: 2 }}
+            >
+              Start New Survey
             </Button>
           </Box>
 

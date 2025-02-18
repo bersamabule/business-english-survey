@@ -14,6 +14,21 @@ import SurveySection from './SurveySection';
 import ResponseReview from './ResponseReview';
 import CurriculumRecommendation from './CurriculumRecommendation';
 import { surveyData } from '../data/surveyData';
+import { supabase } from '../utils/supabaseClient';
+import { generateSurveyPDF } from '../utils/generateSurveyPDF';
+
+async function sendEmailReport(clientName, surveyData) {
+  console.log('Sending email report for:', clientName);
+  const { error } = await supabase.functions.invoke('send-email', {
+    body: {
+      to: 'andrew@woburnforum.com',
+      subject: `Survey Completed by ${clientName}`,
+      text: `The survey has been completed. Here are the details: ${JSON.stringify(surveyData)}`
+    }
+  });
+  if (error) console.error('Error sending email:', error);
+  else console.log('Email sent successfully');
+}
 
 const Survey = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -21,7 +36,16 @@ const Survey = () => {
   const [clientName, setClientName] = useState('');
   const steps = ['Client Info', ...surveyData.sections.map(s => s.title), 'Review', 'Recommendations'];
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (activeStep === steps.length - 1) {
+      console.log('Survey finished, sending email...');
+      try {
+        await sendEmailReport(clientName, responses);
+        console.log('Email sent successfully');
+      } catch (error) {
+        console.error('Error sending email:', error);
+      }
+    }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -38,6 +62,10 @@ const Survey = () => {
 
   const handleClientNameChange = (event) => {
     setClientName(event.target.value);
+  };
+
+  const handleGeneratePDF = () => {
+    generateSurveyPDF();
   };
 
   const getStepContent = (step) => {
@@ -86,7 +114,7 @@ const Survey = () => {
             </Step>
           ))}
         </Stepper>
-        
+
         <Box sx={{ mt: 4 }}>
           {activeStep === steps.length ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -96,11 +124,14 @@ const Survey = () => {
               <Button onClick={() => setActiveStep(0)}>
                 Start New Survey
               </Button>
+              <Button onClick={handleGeneratePDF} sx={{ ml: 2 }}>
+                Download Survey as PDF
+              </Button>
             </Box>
           ) : (
             <>
               {getStepContent(activeStep)}
-              
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
                 <Button
                   disabled={activeStep === 0}
