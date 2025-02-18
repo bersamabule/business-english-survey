@@ -21,8 +21,8 @@ async function sendEmailReport(clientName, surveyData) {
   console.log('Client Name:', clientName);
   
   try {
-    console.log('Sending email request to Netlify function...');
-    const response = await fetch('/.netlify/functions/send-email', {
+    console.log('Sending email request to Edge Function...');
+    const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,9 +33,9 @@ async function sendEmailReport(clientName, surveyData) {
       })
     });
 
-    console.log('Netlify function response status:', response.status);
+    console.log('Edge function response status:', response.status);
     const data = await response.json();
-    console.log('Netlify function response:', data);
+    console.log('Edge function response:', data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Failed to send email');

@@ -1,7 +1,10 @@
 [build]
   command = "npm run build"
   publish = "build"
-  functions = "netlify/functions"
+
+[[edge_functions]]
+  path = "/api/send-email"
+  function = "send-email"
 
 [[redirects]]
   from = "/*"
