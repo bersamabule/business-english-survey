@@ -18,16 +18,30 @@ import { supabase } from '../utils/supabaseClient';
 import { generateSurveyPDF } from '../utils/generateSurveyPDF';
 
 async function sendEmailReport(clientName, surveyData) {
-  console.log('Sending email report for:', clientName);
-  const { error } = await supabase.functions.invoke('send-email', {
-    body: {
-      to: 'andrew@woburnforum.com',
-      subject: `Survey Completed by ${clientName}`,
-      text: `The survey has been completed. Here are the details: ${JSON.stringify(surveyData)}`
+  console.log('Attempting to send email for:', clientName);
+  try {
+    const { data, error } = await supabase.functions.invoke('send-survey-email', {
+      body: {
+        to: 'andrew@woburnforum.com',
+        subject: `Survey Completed by ${clientName}`,
+        content: {
+          clientName,
+          surveyData: JSON.stringify(surveyData, null, 2)
+        }
+      }
+    });
+
+    if (error) {
+      console.error('Error sending email:', error);
+      throw error;
     }
-  });
-  if (error) console.error('Error sending email:', error);
-  else console.log('Email sent successfully');
+
+    console.log('Email sent successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    throw error;
+  }
 }
 
 const Survey = () => {
