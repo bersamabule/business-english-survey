@@ -17,7 +17,10 @@ import { surveyData } from '../data/surveyData';
 import { generateSurveyPDF } from '../utils/generateSurveyPDF';
 
 async function sendEmailReport(clientName, surveyData) {
-  console.log('Attempting to send email for:', clientName);
+  console.log('Starting email send process...');
+  console.log('API Key present:', !!process.env.REACT_APP_RESEND_API_KEY);
+  console.log('Client Name:', clientName);
+  
   try {
     if (!process.env.REACT_APP_RESEND_API_KEY) {
       throw new Error('Resend API key is not configured');
@@ -38,6 +41,7 @@ async function sendEmailReport(clientName, surveyData) {
       <p>Generated on ${new Date().toLocaleString()}</p>
     `;
 
+    console.log('Sending email request to Resend...');
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -52,16 +56,21 @@ async function sendEmailReport(clientName, surveyData) {
       })
     });
 
+    console.log('Resend API Response Status:', response.status);
+    const responseData = await response.json();
+    console.log('Resend API Response:', responseData);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Email API error: ${errorData.message || 'Unknown error'}`);
+      throw new Error(`Email API error: ${responseData.message || 'Unknown error'} (Status: ${response.status})`);
     }
 
-    const data = await response.json();
-    console.log('Email sent successfully:', data);
-    return data;
+    return responseData;
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('Detailed email error:', {
+      message: error.message,
+      stack: error.stack,
+      apiKey: process.env.REACT_APP_RESEND_API_KEY ? 'Present' : 'Missing'
+    });
     throw new Error(`Email sending failed: ${error.message}`);
   }
 }
