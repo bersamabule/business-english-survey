@@ -10,7 +10,8 @@ import {
   Button,
   Chip,
   TableContainer,
-  CircularProgress
+  CircularProgress,
+  Paper
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
@@ -20,11 +21,10 @@ import DownloadIcon from '@mui/icons-material/Download';
 const TOTAL_HOURS = 40;
 
 const IMPORTANCE_WEIGHTS = {
-  'very-important': 1.0,
-  'important': 0.75,
-  'neutral': 0.5,
-  'slightly-unimportant': 0.25,
-  'totally-unimportant': 0
+  'Very Important': 1,
+  'Important': 0.7,
+  'Less Important': 0.3,
+  'Not Important': 0
 };
 
 // Helper functions
@@ -32,7 +32,7 @@ function getPriorityLevel(weight) {
   if (weight >= 0.8) return 'High Priority';
   if (weight >= 0.5) return 'Medium Priority';
   return 'Low Priority';
-};
+}
 
 function getPriorityColor(priority) {
   switch (priority) {
@@ -40,29 +40,27 @@ function getPriorityColor(priority) {
       return 'error';
     case 'Medium Priority':
       return 'warning';
-    case 'Low Priority':
-      return 'info';
     default:
-      return 'default';
+      return 'info';
   }
-};
+}
 
 function calculateModuleScore(module, responses) {
   const responseKey = module.id;
   const response = responses[responseKey];
   const weight = response ? IMPORTANCE_WEIGHTS[response] : 0;
-  
+
   const skillResponses = module.skills.map(skill => ({
     skill,
-    response,
-    weight
+    response: responses[skill] || 'Not Important',
+    weight: IMPORTANCE_WEIGHTS[responses[skill] || 'Not Important']
   }));
 
   return {
     weight,
     skillResponses
   };
-};
+}
 
 async function sendEmailReport(clientName, surveyData) {
   console.log('Sending email report for:', clientName);
@@ -286,7 +284,7 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
         margin: 2
       }}>
         <Typography variant="h5" sx={{ color: '#2e7d32', mb: 2 }}>
-          ✅ Survey Submitted Successfully!
+          Survey Submitted Successfully!
         </Typography>
         <Typography>
           Thank you for completing the survey. A summary has been sent to andrew@woburnforum.com
@@ -310,7 +308,7 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
       {recommendations.responseRate < 30 ? (
         <Paper sx={{ p: 2, mb: 3, bgcolor: 'warning.light' }}>
           <Typography color="warning.dark">
-            ⚠️ Only {Math.round(recommendations.responseRate)}% of modules were answered. The curriculum recommendation may not be accurate. We recommend completing more of the survey for a better-tailored curriculum.
+            Only {Math.round(recommendations.responseRate)}% of modules were answered. The curriculum recommendation may not be accurate. We recommend completing more of the survey for a better-tailored curriculum.
           </Typography>
         </Paper>
       ) : null}
