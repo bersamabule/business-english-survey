@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -17,7 +16,6 @@ import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import { surveyData } from '../data/surveyData';
 import DownloadIcon from '@mui/icons-material/Download';
-import { supabase } from '../utils/supabaseClient';
 
 const TOTAL_HOURS = 40;
 
@@ -30,13 +28,13 @@ const IMPORTANCE_WEIGHTS = {
 };
 
 // Helper functions
-const getPriorityLevel = (weight) => {
+function getPriorityLevel(weight) {
   if (weight >= 0.8) return 'High Priority';
   if (weight >= 0.5) return 'Medium Priority';
   return 'Low Priority';
 };
 
-const getPriorityColor = (priority) => {
+function getPriorityColor(priority) {
   switch (priority) {
     case 'High Priority':
       return 'error';
@@ -49,7 +47,7 @@ const getPriorityColor = (priority) => {
   }
 };
 
-const calculateModuleScore = (module, responses) => {
+function calculateModuleScore(module, responses) {
   const responseKey = module.id;
   const response = responses[responseKey];
   const weight = response ? IMPORTANCE_WEIGHTS[response] : 0;
@@ -68,16 +66,29 @@ const calculateModuleScore = (module, responses) => {
 
 async function sendEmailReport(clientName, surveyData) {
   console.log('Sending email report for:', clientName);
-  const { error } = await supabase.functions.invoke('send-email', {
-    body: {
-      to: 'andrew@woburnforum.com',
-      subject: `Survey Completed by ${clientName}`,
-      text: `The survey has been completed. Here are the details: ${JSON.stringify(surveyData)}`
+  try {
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        clientName,
+        surveyData
+      })
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to send email');
     }
-  });
-  if (error) console.error('Error sending email:', error);
-  else console.log('Email sent successfully');
-}
+
+    console.log('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+};
 
 const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
