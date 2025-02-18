@@ -1,6 +1,8 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
+  console.log('Netlify function called');
+  
   // Only allow POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -8,6 +10,12 @@ exports.handler = async function(event, context) {
 
   try {
     const { clientName, surveyData } = JSON.parse(event.body);
+    console.log('Received request for client:', clientName);
+
+    if (!process.env.REACT_APP_RESEND_API_KEY) {
+      console.error('Resend API key not found in environment');
+      throw new Error('Resend API key not configured');
+    }
 
     const emailContent = `
       <h1>Business English Survey Report</h1>
@@ -24,6 +32,7 @@ exports.handler = async function(event, context) {
       <p>Generated on ${new Date().toLocaleString()}</p>
     `;
 
+    console.log('Sending request to Resend API...');
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -39,8 +48,10 @@ exports.handler = async function(event, context) {
     });
 
     const data = await response.json();
+    console.log('Resend API response:', data);
 
     if (!response.ok) {
+      console.error('Resend API error:', data);
       throw new Error(data.message || 'Failed to send email');
     }
 
@@ -49,10 +60,14 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({ message: 'Email sent successfully', data })
     };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error in Netlify function:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Failed to send email', error: error.message })
+      body: JSON.stringify({ 
+        message: 'Failed to send email', 
+        error: error.message,
+        stack: error.stack 
+      })
     };
   }
 };

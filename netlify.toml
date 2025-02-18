@@ -1,6 +1,7 @@
 [build]
-  command = "echo 'Checking env vars...' && echo 'RESEND_API_KEY present:' $REACT_APP_RESEND_API_KEY && npm run build"
+  command = "npm run build"
   publish = "build"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
