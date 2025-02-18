@@ -14,7 +14,6 @@ import SurveySection from './SurveySection';
 import ResponseReview from './ResponseReview';
 import CurriculumRecommendation from './CurriculumRecommendation';
 import { surveyData } from '../data/surveyData';
-import { supabase } from '../utils/supabaseClient';
 import { generateSurveyPDF } from '../utils/generateSurveyPDF';
 
 async function sendEmailReport(clientName, surveyData) {
