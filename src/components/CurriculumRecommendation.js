@@ -21,10 +21,11 @@ import DownloadIcon from '@mui/icons-material/Download';
 const TOTAL_HOURS = 40;
 
 const IMPORTANCE_WEIGHTS = {
-  'Very Important': 1,
-  'Important': 0.7,
-  'Less Important': 0.3,
-  'Not Important': 0
+  'very-important': 1.0,
+  'important': 0.75,
+  'neutral': 0.5,
+  'slightly-unimportant': 0.25,
+  'totally-unimportant': 0
 };
 
 // Helper functions
@@ -50,11 +51,11 @@ function calculateModuleScore(module, responses) {
   const response = responses[responseKey];
   const weight = response ? IMPORTANCE_WEIGHTS[response] : 0;
 
-  const skillResponses = module.skills.map(skill => ({
+  const skillResponses = module.skills ? module.skills.map(skill => ({
     skill,
-    response: responses[skill] || 'Not Important',
-    weight: IMPORTANCE_WEIGHTS[responses[skill] || 'Not Important']
-  }));
+    response: responses[skill] || 'totally-unimportant',
+    weight: IMPORTANCE_WEIGHTS[responses[skill] || 'totally-unimportant']
+  })) : [];
 
   return {
     weight,
