@@ -9,7 +9,8 @@ export default async function handler(request, context) {
     const { clientName, surveyData } = await request.json();
     console.log('Received request for client:', clientName);
 
-    if (!Deno.env.get('REACT_APP_RESEND_API_KEY')) {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
       console.error('Resend API key not found in environment');
       throw new Error('Resend API key not configured');
     }
@@ -33,7 +34,7 @@ export default async function handler(request, context) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('REACT_APP_RESEND_API_KEY')}`,
+        'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -44,31 +45,31 @@ export default async function handler(request, context) {
       })
     });
 
-    const data = await response.json();
-    console.log('Resend API response:', data);
-
     if (!response.ok) {
+      const data = await response.json();
       console.error('Resend API error:', data);
       throw new Error(data.message || 'Failed to send email');
     }
 
-    return new Response(JSON.stringify({ message: 'Email sent successfully', data }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (error) {
-    console.error('Error in Edge function:', error);
-    return new Response(JSON.stringify({
-      message: 'Failed to send email',
-      error: error.message,
-      stack: error.stack
+    const data = await response.json();
+    console.log('Resend API response:', data);
+
+    return new Response(JSON.stringify({ 
+      message: 'Email sent successfully',
+      data 
     }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' },
+      status: 200
+    });
+
+  } catch (error) {
+    console.error('Error in edge function:', error);
+    return new Response(JSON.stringify({ 
+      message: error.message || 'Internal server error',
+      error: error.toString()
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
     });
   }
 }
