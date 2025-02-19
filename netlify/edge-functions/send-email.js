@@ -35,8 +35,8 @@ export default async function handler(request, context) {
     console.log('Parsed request data - Client:', clientName);
     console.log('Survey data:', JSON.stringify(surveyData, null, 2));
 
-    // Get API key from context.env instead of Deno.env
-    const resendApiKey = context.env.RESEND_API_KEY;
+    // Get API key from context.env using the correct name
+    const resendApiKey = context.env.REACT_APP_RESEND_API_KEY;
     console.log('API Key exists:', !!resendApiKey);
     
     if (!resendApiKey) {

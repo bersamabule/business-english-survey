@@ -10,7 +10,7 @@
   path = "/api/send-email"
 
 [context.production.environment]
-  RESEND_API_KEY = "use_netlify_environment_variable"
+  REACT_APP_RESEND_API_KEY = "use_netlify_environment_variable"
 
 [dev]
   framework = "#static"
