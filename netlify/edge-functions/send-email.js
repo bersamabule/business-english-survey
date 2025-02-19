@@ -35,10 +35,8 @@ export default async function handler(request, context) {
     console.log('Parsed request data - Client:', clientName);
     console.log('Survey data:', JSON.stringify(surveyData, null, 2));
 
-    // Access environment variable directly from Deno.env
     const resendApiKey = Deno.env.get('REACT_APP_RESEND_API_KEY');
     console.log('API Key exists:', !!resendApiKey);
-    console.log('Available env vars:', Object.keys(Deno.env.toObject()));
     
     if (!resendApiKey) {
       console.error('Resend API key not found in environment');
@@ -55,7 +53,7 @@ export default async function handler(request, context) {
 
     console.log('Preparing to send email...');
     const emailRequest = {
-      from: 'Business English Survey <survey@woburnforum.com>',
+      from: 'Business English Survey <onboarding@resend.dev>',
       to: 'andrew@woburnforum.com',
       subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
       html: emailContent
