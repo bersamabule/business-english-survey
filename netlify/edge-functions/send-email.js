@@ -1,8 +1,10 @@
 export default async function handler(request, context) {
-  console.log('Edge function called');
+  console.log('Edge function called with method:', request.method);
+  console.log('Request headers:', Object.fromEntries(request.headers.entries()));
 
   // Handle CORS preflight request
   if (request.method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
     return new Response(null, {
       status: 204,
       headers: {
@@ -15,17 +17,23 @@ export default async function handler(request, context) {
   }
 
   if (request.method !== 'POST') {
+    console.log('Invalid method:', request.method);
     return new Response('Method not allowed', { 
       status: 405,
       headers: {
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
       }
     });
   }
 
   try {
-    const { clientName, surveyData } = await request.json();
-    console.log('Received request for client:', clientName);
+    const body = await request.text();
+    console.log('Raw request body:', body);
+    
+    const { clientName, surveyData } = JSON.parse(body);
+    console.log('Parsed request data - Client:', clientName);
+    console.log('Survey data:', JSON.stringify(surveyData, null, 2));
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
@@ -37,16 +45,18 @@ export default async function handler(request, context) {
       <h1>Business English Survey Report</h1>
       <h2>Client: ${clientName}</h2>
       <h3>Survey Results:</h3>
-      ${Object.entries(surveyData).map(([section, responses]) => `
-        <h4>${section}</h4>
-        <ul>
-          ${Object.entries(responses).map(([skill, rating]) => `
-            <li><strong>${skill}:</strong> ${rating}</li>
-          `).join('')}
-        </ul>
-      `).join('')}
+      <pre>${JSON.stringify(surveyData, null, 2)}</pre>
       <p>Generated on ${new Date().toLocaleString()}</p>
     `;
+
+    console.log('Preparing to send email...');
+    const emailRequest = {
+      from: 'Business English Survey <survey@woburnforum.com>',
+      to: 'andrew@woburnforum.com',
+      subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
+      html: emailContent
+    };
+    console.log('Email request:', JSON.stringify(emailRequest, null, 2));
 
     console.log('Sending request to Resend API...');
     const response = await fetch('https://api.resend.com/emails', {
@@ -55,21 +65,24 @@ export default async function handler(request, context) {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        from: 'Business English Survey <survey@woburnforum.com>',
-        to: 'andrew@woburnforum.com',
-        subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
-        html: emailContent
-      })
+      body: JSON.stringify(emailRequest)
     });
 
+    const responseText = await response.text();
+    console.log('Resend API raw response:', responseText);
+
     if (!response.ok) {
-      const data = await response.json();
-      console.error('Resend API error:', data);
-      throw new Error(data.message || 'Failed to send email');
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+      } catch (e) {
+        errorData = { message: responseText };
+      }
+      console.error('Resend API error:', errorData);
+      throw new Error(errorData.message || 'Failed to send email');
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     console.log('Resend API response:', data);
 
     return new Response(JSON.stringify({ 
@@ -84,10 +97,11 @@ export default async function handler(request, context) {
     });
 
   } catch (error) {
-    console.error('Error in edge function:', error);
+    console.error('Error in edge function:', error.stack || error);
     return new Response(JSON.stringify({ 
-      message: error.message || 'Internal server error',
-      error: error.toString()
+      message: 'Failed to send email',
+      error: error.message,
+      stack: error.stack
     }), {
       headers: { 
         'Content-Type': 'application/json',

@@ -2,9 +2,15 @@
   command = "npm run build"
   publish = "build"
 
+[functions]
+  directory = "netlify/functions"
+
 [[edge_functions]]
-  path = "/api/send-email"
   function = "send-email"
+  path = "/api/send-email"
+
+[dev]
+  framework = "#static"
 
 [[redirects]]
   from = "/*"
