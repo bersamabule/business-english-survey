@@ -1,8 +1,26 @@
 export default async function handler(request, context) {
   console.log('Edge function called');
 
+  // Handle CORS preflight request
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '86400'
+      }
+    });
+  }
+
   if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response('Method not allowed', { 
+      status: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 
   try {
@@ -58,7 +76,10 @@ export default async function handler(request, context) {
       message: 'Email sent successfully',
       data 
     }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       status: 200
     });
 
@@ -68,7 +89,10 @@ export default async function handler(request, context) {
       message: error.message || 'Internal server error',
       error: error.toString()
     }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       status: 500
     });
   }

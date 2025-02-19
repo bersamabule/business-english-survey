@@ -66,6 +66,7 @@ function calculateModuleScore(module, responses) {
 async function sendEmailReport(clientName, surveyData) {
   console.log('Sending email report for:', clientName);
   try {
+    console.log('Making request to Edge Function...');
     const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
@@ -77,15 +78,18 @@ async function sendEmailReport(clientName, surveyData) {
       })
     });
 
+    console.log('Edge function response status:', response.status);
+    const data = await response.json();
+    console.log('Edge function response:', data);
+
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Failed to send email');
+      throw new Error(data.message || `Failed to send email: ${response.status}`);
     }
 
-    console.log('Email sent successfully');
+    return data;
   } catch (error) {
     console.error('Error sending email:', error);
-    throw error;
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
