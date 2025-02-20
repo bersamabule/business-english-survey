@@ -53,7 +53,7 @@ export default async function handler(request, context) {
 
     console.log('Preparing to send email...');
     const emailRequest = {
-      from: 'Business English Survey <survey@woburnforum.com>',
+      from: 'Business English Survey <andrew@woburnforum.com>',
       to: 'andrew@woburnforum.com',
       subject: `Survey Results: ${clientName} - ${new Date().toLocaleDateString()}`,
       html: emailContent
