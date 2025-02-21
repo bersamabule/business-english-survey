@@ -63,33 +63,45 @@ function calculateModuleScore(module, responses) {
   };
 }
 
-async function sendEmailReport(clientName, surveyData) {
-  console.log('Sending email report for:', clientName);
+async function handleSurveyCompletion(clientName, surveyData) {
   try {
-    console.log('Making request to Edge Function...');
-    const response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        clientName,
-        surveyData
-      })
-    });
+    // Save survey results with timestamp
+    const surveyResult = {
+      clientName,
+      surveyData,
+      timestamp: new Date().toISOString(),
+      id: Date.now().toString()
+    };
 
-    console.log('Edge function response status:', response.status);
-    const data = await response.json();
-    console.log('Edge function response:', data);
+    // Get existing results or initialize empty array
+    const existingResults = JSON.parse(localStorage.getItem('surveyResults') || '[]');
+    existingResults.push(surveyResult);
+    localStorage.setItem('surveyResults', JSON.stringify(existingResults));
 
-    if (!response.ok) {
-      throw new Error(data.message || `Failed to send email: ${response.status}`);
+    // Show browser notification if permitted
+    if (Notification.permission === "granted") {
+      new Notification("New Survey Submission", {
+        body: `New survey submitted by ${clientName}`,
+        icon: "/favicon.ico"
+      });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification("New Survey Submission", {
+            body: `New survey submitted by ${clientName}`,
+            icon: "/favicon.ico"
+          });
+        }
+      });
     }
 
-    return data;
+    // Store latest submission ID for redirect
+    sessionStorage.setItem('latestSubmissionId', surveyResult.id);
+    
+    return true;
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error(`Failed to send email: ${error.message}`);
+    console.error('Error saving survey:', error);
+    throw error;
   }
 };
 
@@ -252,31 +264,23 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
     XLSX.writeFile(wb, fileName);
   };
 
-  const handleSurveyCompletion = async () => {
-    console.log('Survey completion triggered');
-    await sendEmailReport(clientName, responses);
-  };
-
-  const resetSurvey = () => {
-    setResponses({});
-  };
-
   const handleSubmitSurvey = async () => {
     setIsSubmitting(true);
     try {
-      await handleSurveyCompletion();
+      await handleSurveyCompletion(clientName, responses);
       setShowSuccess(true);
-      // Show success message for 2 seconds, then redirect
-      setTimeout(() => {
-        resetSurvey();
-        window.location.href = '/'; // Redirect to home page
-      }, 2000);
+      // Redirect to reports page after success
+      window.location.href = '/reports';
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('There was an error submitting your survey. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetSurvey = () => {
+    setResponses({});
   };
 
   if (showSuccess) {
@@ -295,7 +299,7 @@ const CurriculumRecommendation = ({ responses, clientName, setResponses }) => {
           Thank you for completing the survey. A summary has been sent to andrew@woburnforum.com
         </Typography>
         <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
-          Redirecting to home page...
+          Redirecting to reports page...
         </Typography>
       </Box>
     );
