@@ -17,6 +17,12 @@ if (-not $hasCommits) {
 # Add all changes
 git add .
 
+# Add the new dice project files explicitly to ensure they're included
+git add -f dice/index.html
+git add -f dice/styles.css
+git add -f dice/script.js
+git add -f dice/README.md
+
 # Commit changes with timestamp
 if ($initialCommit) {
     git commit -m "Initial commit"
