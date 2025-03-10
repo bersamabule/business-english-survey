@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Die with Cat (All-in-One)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: transparent;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            position: relative;
+            width: 700px;
+            height: 400px;
+            margin: 0 auto;
+        }
+
+        .die-container {
+            width: 150px;
+            height: 150px;
+            perspective: 1200px;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .die {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: rotateX(0) rotateY(0) rotateZ(0);
+        }
+
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border: 2px solid #333;
+            border-radius: 15%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.1),
+                0 5px 15px rgba(0, 0, 0, 0.2);
+            backface-visibility: hidden;
+        }
+
+        .dot {
+            position: absolute;
+            width: 16%;
+            height: 16%;
+            background: linear-gradient(145deg, #333, #222);
+            border-radius: 50%;
+            box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dot positions */
+        .center {
+            top: 42%;
+            left: 42%;
+        }
+
+        .top-left {
+            top: 12%;
+            left: 12%;
+        }
+
+        .top-right {
+            top: 12%;
+            right: 12%;
+        }
+
+        .bottom-left {
+            bottom: 12%;
+            left: 12%;
+        }
+
+        .bottom-right {
+            bottom: 12%;
+            right: 12%;
+        }
+
+        .middle-left {
+            top: 42%;
+            left: 12%;
+        }
+
+        .middle-right {
+            top: 42%;
+            right: 12%;
+        }
+
+        /* Face positions */
+        .front {
+            transform: translateZ(75px);
+        }
+
+        .back {
+            transform: rotateY(180deg) translateZ(75px);
+        }
+
+        .right {
+            transform: rotateY(90deg) translateZ(75px);
+        }
+
+        .left {
+            transform: rotateY(-90deg) translateZ(75px);
+        }
+
+        .top {
+            transform: rotateX(90deg) translateZ(75px);
+        }
+
+        .bottom {
+            transform: rotateX(-90deg) translateZ(75px);
+        }
+
+        .instructions {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+        }
+
+        /* Enhanced animations for rolling */
+        @keyframes rolling {
+            0% { 
+                transform: rotateX(0) rotateY(0) rotateZ(0);
+                animation-timing-function: ease-in;
+            }
+            25% {
+                transform: rotateX(180deg) rotateY(360deg) rotateZ(90deg);
+                animation-timing-function: linear;
+            }
+            50% {
+                transform: rotateX(360deg) rotateY(720deg) rotateZ(180deg);
+                animation-timing-function: linear;
+            }
+            75% {
+                transform: rotateX(540deg) rotateY(1080deg) rotateZ(270deg);
+                animation-timing-function: ease-out;
+            }
+            100% { 
+                transform: rotateX(720deg) rotateY(1440deg) rotateZ(360deg);
+            }
+        }
+
+        .rolling {
+            animation: rolling 2s forwards;
+        }
+
+        /* Add hover effect */
+        .die-container:hover .die {
+            transform: rotateX(10deg) rotateY(10deg);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Add glow effect during rolling */
+        .rolling .face {
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.1),
+                0 0 15px rgba(255, 255, 255, 0.5),
+                0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Cat styling */
+        .cat-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        .cat {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-origin: bottom center;
+        }
+
+        .cat-head {
+            position: absolute;
+            width: 110px;
+            height: 90px;
+            background: #FF9D5C;
+            border-radius: 50%;
+            top: 40px;
+            left: 45px;
+            z-index: 3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .cat-ear-left {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: #FF9D5C;
+            border-radius: 50% 50% 0 50%;
+            top: 20px;
+            left: 45px;
+            transform: rotate(-30deg);
+            z-index: 2;
+        }
+
+        .cat-ear-right {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: #FF9D5C;
+            border-radius: 50% 50% 50% 0;
+            top: 20px;
+            right: 45px;
+            transform: rotate(30deg);
+            z-index: 2;
+        }
+
+        .cat-ear-inner-left {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFCDB2;
+            border-radius: 50%;
+            top: 8px;
+            left: 8px;
+            z-index: 3;
+        }
+
+        .cat-ear-inner-right {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFCDB2;
+            border-radius: 50%;
+            top: 8px;
+            right: 8px;
+            z-index: 3;
+        }
+
+        .cat-face {
+            position: absolute;
+            width: 90px;
+            height: 75px;
+            background: white;
+            border-radius: 45%;
+            top: 50px;
+            left: 55px;
+            z-index: 4;
+        }
+
+        .cat-eye-left {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #FFDE7A;
+            border-radius: 50%;
+            top: 65px;
+            left: 70px;
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .cat-eye-right {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #FFDE7A;
+            border-radius: 50%;
+            top: 65px;
+            right: 70px;
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .cat-pupil-left {
+            position: absolute;
+            width: 10px;
+            height: 18px;
+            background: #333;
+            border-radius: 50%;
+            top: 0;
+            left: 4px;
+            z-index: 6;
+        }
+
+        .cat-pupil-right {
+            position: absolute;
+            width: 10px;
+            height: 18px;
+            background: #333;
+            border-radius: 50%;
+            top: 0;
+            left: 4px;
+            z-index: 6;
+        }
+
+        .cat-pupil-shine-left {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 2px;
+            z-index: 7;
+        }
+
+        .cat-pupil-shine-right {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 2px;
+            z-index: 7;
+        }
+
+        .cat-nose {
+            position: absolute;
+            width: 12px;
+            height: 8px;
+            background: #FF6B6B;
+            border-radius: 50%;
+            top: 85px;
+            left: 94px;
+            z-index: 5;
+        }
+
+        .cat-mouth {
+            position: absolute;
+            width: 40px;
+            height: 15px;
+            top: 93px;
+            left: 80px;
+            z-index: 5;
+        }
+
+        .cat-mouth-line-left {
+            position: absolute;
+            width: 15px;
+            height: 8px;
+            border-bottom: 2px solid #333;
+            border-radius: 0 0 50% 50%;
+            top: 0;
+            left: 5px;
+        }
+
+        .cat-mouth-line-right {
+            position: absolute;
+            width: 15px;
+            height: 8px;
+            border-bottom: 2px solid #333;
+            border-radius: 0 0 50% 50%;
+            top: 0;
+            right: 5px;
+        }
+
+        .cat-whiskers-container {
+            position: absolute;
+            width: 150px;
+            height: 40px;
+            top: 85px;
+            left: 25px;
+            z-index: 4;
+        }
+
+        .cat-whisker {
+            position: absolute;
+            height: 1.5px;
+            background: #DDD;
+            border-radius: 10px;
+        }
+
+        .cat-whisker-left-top {
+            width: 30px;
+            top: 5px;
+            left: 0;
+            transform: rotate(-10deg);
+        }
+
+        .cat-whisker-left-middle {
+            width: 35px;
+            top: 15px;
+            left: 0;
+        }
+
+        .cat-whisker-left-bottom {
+            width: 30px;
+            top: 25px;
+            left: 0;
+            transform: rotate(10deg);
+        }
+
+        .cat-whisker-right-top {
+            width: 30px;
+            top: 5px;
+            right: 0;
+            transform: rotate(10deg);
+        }
+
+        .cat-whisker-right-middle {
+            width: 35px;
+            top: 15px;
+            right: 0;
+        }
+
+        .cat-whisker-right-bottom {
+            width: 30px;
+            top: 25px;
+            right: 0;
+            transform: rotate(-10deg);
+        }
+
+        .cat-body {
+            position: absolute;
+            width: 120px;
+            height: 90px;
+            background: #FF9D5C;
+            border-radius: 50% 50% 45% 45%;
+            top: 110px;
+            left: 40px;
+            z-index: 2;
+        }
+
+        .cat-chest {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            top: 115px;
+            left: 60px;
+            z-index: 3;
+        }
+
+        .cat-tail {
+            position: absolute;
+            width: 60px;
+            height: 15px;
+            background: #FF9D5C;
+            border-radius: 10px;
+            top: 130px;
+            left: 10px;
+            transform-origin: right center;
+            transform: rotate(30deg);
+            z-index: 1;
+        }
+
+        .cat-paw-left {
+            position: absolute;
+            width: 30px;
+            height: 35px;
+            background: #FFCDB2;
+            border-radius: 50% 50% 40% 40%;
+            top: 170px;
+            left: 50px;
+            z-index: 3;
+            transform-origin: top center;
+        }
+
+        .cat-paw-right {
+            position: absolute;
+            width: 30px;
+            height: 35px;
+            background: #FFCDB2;
+            border-radius: 50% 50% 40% 40%;
+            top: 170px;
+            right: 50px;
+            z-index: 3;
+            transform-origin: top center;
+        }
+
+        .cat-paw-pad-left {
+            position: absolute;
+            width: 18px;
+            height: 12px;
+            background: #FF9D5C;
+            border-radius: 50%;
+            bottom: 5px;
+            left: 6px;
+            opacity: 0.7;
+        }
+
+        .cat-paw-pad-right {
+            position: absolute;
+            width: 18px;
+            height: 12px;
+            background: #FF9D5C;
+            border-radius: 50%;
+            bottom: 5px;
+            left: 6px;
+            opacity: 0.7;
+        }
+
+        /* Cat animations */
+        @keyframes catThrow {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes pawWave {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-30deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes tailWag {
+            0% { transform: rotate(30deg); }
+            50% { transform: rotate(50deg); }
+            100% { transform: rotate(30deg); }
+        }
+
+        @keyframes eyeBlink {
+            0% { transform: scaleY(1); }
+            45% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+            55% { transform: scaleY(1); }
+            100% { transform: scaleY(1); }
+        }
+
+        .cat-throwing {
+            animation: catThrow 2s forwards;
+        }
+
+        .paw-waving {
+            animation: pawWave 1s forwards;
+        }
+
+        .tail-wagging {
+            animation: tailWag 1s infinite;
+        }
+
+        .eye-blinking {
+            animation: eyeBlink 4s infinite;
+        }
+
+        /* Die movement when cat throws */
+        @keyframes dieJump {
+            0% { 
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            25% { 
+                transform: translate(-50px, -100px) scale(0.8) rotate(45deg);
+                opacity: 0.9;
+            }
+            50% { 
+                transform: translate(0, -150px) scale(0.7) rotate(90deg);
+                opacity: 0.8;
+            }
+            75% { 
+                transform: translate(50px, -100px) scale(0.8) rotate(135deg);
+                opacity: 0.9;
+            }
+            100% { 
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .die-jumping {
+            animation: dieJump 1s forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cat character -->
+        <div class="cat-container" id="cat-container">
+            <div class="cat" id="cat">
+                <div class="cat-ear-left">
+                    <div class="cat-ear-inner-left"></div>
+                </div>
+                <div class="cat-ear-right">
+                    <div class="cat-ear-inner-right"></div>
+                </div>
+                <div class="cat-head"></div>
+                <div class="cat-face"></div>
+                <div class="cat-eye-left eye-blinking">
+                    <div class="cat-pupil-left">
+                        <div class="cat-pupil-shine-left"></div>
+                    </div>
+                </div>
+                <div class="cat-eye-right eye-blinking">
+                    <div class="cat-pupil-right">
+                        <div class="cat-pupil-shine-right"></div>
+                    </div>
+                </div>
+                <div class="cat-nose"></div>
+                <div class="cat-mouth">
+                    <div class="cat-mouth-line-left"></div>
+                    <div class="cat-mouth-line-right"></div>
+                </div>
+                <div class="cat-whiskers-container">
+                    <div class="cat-whisker cat-whisker-left-top"></div>
+                    <div class="cat-whisker cat-whisker-left-middle"></div>
+                    <div class="cat-whisker cat-whisker-left-bottom"></div>
+                    <div class="cat-whisker cat-whisker-right-top"></div>
+                    <div class="cat-whisker cat-whisker-right-middle"></div>
+                    <div class="cat-whisker cat-whisker-right-bottom"></div>
+                </div>
+                <div class="cat-body"></div>
+                <div class="cat-chest"></div>
+                <div class="cat-tail tail-wagging"></div>
+                <div class="cat-paw-left" id="cat-paw-left">
+                    <div class="cat-paw-pad-left"></div>
+                </div>
+                <div class="cat-paw-right" id="cat-paw-right">
+                    <div class="cat-paw-pad-right"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Die -->
+        <div class="die-container" id="die-container">
+            <div class="die" id="die">
+                <!-- Face 1: One dot in center -->
+                <div class="face front">
+                    <div class="dot center"></div>
+                </div>
+                
+                <!-- Face 6: Six dots -->
+                <div class="face back">
+                    <div class="dot top-left"></div>
+                    <div class="dot top-right"></div>
+                    <div class="dot middle-left"></div>
+                    <div class="dot middle-right"></div>
+                    <div class="dot bottom-left"></div>
+                    <div class="dot bottom-right"></div>
+                </div>
+                
+                <!-- Face 3: Three dots -->
+                <div class="face right">
+                    <div class="dot top-left"></div>
+                    <div class="dot center"></div>
+                    <div class="dot bottom-right"></div>
+                </div>
+                
+                <!-- Face 4: Four dots -->
+                <div class="face left">
+                    <div class="dot top-left"></div>
+                    <div class="dot top-right"></div>
+                    <div class="dot bottom-left"></div>
+                    <div class="dot bottom-right"></div>
+                </div>
+                
+                <!-- Face 2: Two dots -->
+                <div class="face top">
+                    <div class="dot top-left"></div>
+                    <div class="dot bottom-right"></div>
+                </div>
+                
+                <!-- Face 5: Five dots -->
+                <div class="face bottom">
+                    <div class="dot top-left"></div>
+                    <div class="dot top-right"></div>
+                    <div class="dot center"></div>
+                    <div class="dot bottom-left"></div>
+                    <div class="dot bottom-right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="instructions">Click the cat to roll the die!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const die = document.getElementById('die');
+            const dieContainer = document.getElementById('die-container');
+            const cat = document.getElementById('cat');
+            const catContainer = document.getElementById('cat-container');
+            const catPawLeft = document.getElementById('cat-paw-left');
+            const catPawRight = document.getElementById('cat-paw-right');
+            
+            let isRolling = false;
+            
+            // Define rotations for each face (1-6)
+            const rotations = [
+                { x: 0, y: 0, z: 0 },         // 1 (front)
+                { x: 0, y: 180, z: 0 },       // 6 (back)
+                { x: 0, y: 90, z: 0 },        // 3 (right)
+                { x: 0, y: -90, z: 0 },       // 4 (left)
+                { x: 90, y: 0, z: 0 },        // 2 (top)
+                { x: -90, y: 0, z: 0 }        // 5 (bottom)
+            ];
+            
+            // Map to translate rotation index to actual die value
+            const faceValues = [1, 6, 3, 4, 2, 5];
+            
+            // Track current face for debugging
+            let currentFace = 0;
+
+            // Function to roll the die with cat animation
+            function rollDie() {
+                if (isRolling) return;
+                isRolling = true;
+                
+                // Animate cat throwing motion
+                cat.classList.add('cat-throwing');
+                catPawRight.classList.add('paw-waving');
+                
+                // Animate die jumping
+                dieContainer.classList.add('die-jumping');
+                
+                // Wait for jump animation to complete before rolling
+                setTimeout(() => {
+                    // Remove jump animation
+                    dieContainer.classList.remove('die-jumping');
+                    
+                    // Add rolling animation class
+                    die.classList.add('rolling');
+                    
+                    // Generate random face (0-5) ensuring it's different from current face
+                    let randomFace;
+                    do {
+                        randomFace = Math.floor(Math.random() * 6);
+                    } while (randomFace === currentFace && !isFirstRoll);
+                    
+                    currentFace = randomFace;
+                    console.log(`Rolling die... landed on ${faceValues[randomFace]}`);
+                    
+                    // After animation completes, show the selected face
+                    setTimeout(() => {
+                        die.classList.remove('rolling');
+                        
+                        // Apply rotation to show the random face
+                        const rotation = rotations[randomFace];
+                        die.style.transform = `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) rotateZ(${rotation.z}deg)`;
+                        
+                        // Remove cat animations
+                        cat.classList.remove('cat-throwing');
+                        catPawRight.classList.remove('paw-waving');
+                        
+                        // Allow rolling again after a short delay
+                        setTimeout(() => {
+                            isRolling = false;
+                        }, 500);
+                    }, 2000); // Match this with the CSS animation duration
+                }, 1000); // Wait for jump animation
+            }
+            
+            // Initialize die to face 1
+            const initialRotation = rotations[0];
+            die.style.transform = `rotateX(${initialRotation.x}deg) rotateY(${initialRotation.y}deg) rotateZ(${initialRotation.z}deg)`;
+            let isFirstRoll = true;
+
+            // Event listeners for clicking the cat or die
+            catContainer.addEventListener('click', () => {
+                rollDie();
+                isFirstRoll = false;
+            });
+            
+            dieContainer.addEventListener('click', () => {
+                rollDie();
+                isFirstRoll = false;
+            });
+
+            // For PowerPoint compatibility - also listen for pointer events
+            catContainer.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                rollDie();
+                isFirstRoll = false;
+            });
+            
+            dieContainer.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                rollDie();
+                isFirstRoll = false;
+            });
+
+            // Make sure everything is clickable in PowerPoint
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+            
+            // Auto-blink the cat's eyes
+            setInterval(() => {
+                const eyes = document.querySelectorAll('.cat-eye-left, .cat-eye-right');
+                eyes.forEach(eye => {
+                    eye.classList.remove('eye-blinking');
+                    setTimeout(() => {
+                        eye.classList.add('eye-blinking');
+                    }, 50);
+                });
+            }, 4000);
+        });
+    </script>
+</body>
+</html>
